@@ -60,10 +60,28 @@ td:hover {
 }
 
 @media print {
-  body * { visibility:hidden;}
-  .print-area, .print-area * { visibility:visible;}
-  .print-area { position:absolute; top:0; left:0; width:100%;}
-  button { display:none;}
+ body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 5px; /* mais espaçamento para ver as linhas */
+  }
+  
+  .cartao {
+    width: 100%;
+    height: auto;        /* altura automática para caber na página */
+    box-sizing: border-box;
+    font-size: 8px;
+    padding: 5px;
+    page-break-inside: avoid;
+  }
+  button { display: none; }
 }
 </style>
 </head>
@@ -104,7 +122,10 @@ td:hover {
 </select>
 
 <button onclick="gerarCalendario()">Gerar Calendário</button>
-<button onclick="window.print()">Imprimir</button>
+<button id="btnPrint">Imprimir</button>
+<button id="btnExport">Exportar Estudos</button>
+<input type="file" id="importFile" style="display:none">
+<button id="btnImport">Importar Estudos</button>
 
 <div class="print-area" id="print"></div>
 
@@ -119,29 +140,22 @@ const diaSemana = document.getElementById("diaSemana");
 const mesInicial = document.getElementById("mesInicial");
 const print = document.getElementById("print");
 
-function gerarCalendario(){
+// Gera os estudos
+function gerarCalendario() {
   estudos = [];
-
-  if(!ano.value || diaSemana.value === ""){
+  if (!ano.value || diaSemana.value === "") {
     alert("Preencha ano e dia da semana");
     return;
   }
 
-  let anoNum = parseInt(ano.value);
+  const anoNum = parseInt(ano.value);
 
-  for(let mes=0; mes<12; mes++){
-    for(let dia=1; dia<=31; dia++){
-      let data = new Date(anoNum, mes, dia);
-
-      if(data.getMonth() !== mes) continue;
-
-      if(data.getDay() == diaSemana.value){
-        estudos.push({
-          mes: nomeMes(mes),
-          dia: dia,
-          livro: "",
-          capitulo: ""
-        });
+  for (let mes = 0; mes < 12; mes++) {
+    for (let dia = 1; dia <= 31; dia++) {
+      const data = new Date(anoNum, mes, dia);
+      if (data.getMonth() !== mes) continue;
+      if (data.getDay() == diaSemana.value) {
+        estudos.push({ mes: nomeMes(mes), dia: dia, livro: "", capitulo: "" });
       }
     }
   }
@@ -149,96 +163,137 @@ function gerarCalendario(){
   renderCartao();
 }
 
-function nomeMes(m){
+// Nome do mês
+function nomeMes(m) {
   return ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
           "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][m];
 }
 
-function gerarOrdemMeses(inicio){
-  const meses = [
-    "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-    "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
-  ];
-
-  let index = meses.indexOf(inicio);
+// Ordem dos meses
+function gerarOrdemMeses(inicio) {
+  const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+                 "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const index = meses.indexOf(inicio);
   let ordem = [];
-
-  for(let i=0;i<12;i++){
+  for (let i=0; i<12; i++) {
     ordem.push(meses[(index + i) % 12]);
   }
-
   return ordem;
 }
 
-function renderCartao(){
-
+// Renderiza o cartão
+function renderCartao() {
   const ordem = gerarOrdemMeses(mesInicial.value);
 
   const meses = {};
-  estudos.forEach(e=>{
-    if(!meses[e.mes]) meses[e.mes]=[];
+  estudos.forEach(e => {
+    if (!meses[e.mes]) meses[e.mes] = [];
     meses[e.mes].push(e);
   });
 
   let html = `<div class="cartao">
-  <div class="titulo">Estudos - ${cidade.value} ${ano.value}</div>`;
+    <div class="titulo">Estudos - ${cidade.value} ${ano.value}</div>`;
 
-  for(let i=0;i<6;i++){
+  for (let i = 0; i < 6; i++) {
     let m1 = ordem[i];
     let m2 = ordem[i+6];
-
     html += `<div class="linha">`;
-
     html += colunaHTML(m1, meses[m1]);
     html += colunaHTML(m2, meses[m2]);
-
     html += `</div>`;
   }
 
   html += `</div>`;
 
-  print.innerHTML = html;
+  print.innerHTML = html;            
+  print.dataset.clone = html;        
 }
 
-function colunaHTML(mes, lista){
-  let html = `<div class="coluna">
-    <div class="mes">${mes}</div>
-    <table>`;
-
-  if(lista){
-    lista.forEach((e)=>{
+// Cria as colunas
+function colunaHTML(mes, lista) {
+  let html = `<div class="coluna"><div class="mes">${mes}</div><table>`;
+  if (lista) {
+    lista.forEach(e => {
       let id = estudos.indexOf(e);
-
-      html += `
-        <tr onclick="editar(${id})">
-          <td>${e.dia}</td>
-          <td>${e.livro || ""} ${e.capitulo || ""}</td>
-        </tr>
-      `;
+      html += `<tr onclick="editar(${id})">
+                 <td>${e.dia}</td>
+                 <td>${e.livro || ""} ${e.capitulo || ""}</td>
+               </tr>`;
     });
   }
-
   html += `</table></div>`;
   return html;
 }
 
-function editar(i){
+// Editar estudo
+function editar(i) {
   let livro = prompt("Livro:", estudos[i].livro);
-  if(livro === null) return;
-
+  if (livro === null) return;
   let cap = prompt("Capítulo:", estudos[i].capitulo);
-  if(cap === null) return;
-
+  if (cap === null) return;
   estudos[i].livro = livro;
   estudos[i].capitulo = cap;
-
   renderCartao();
 }
 
-// 🔥 SERVICE WORKER
+// Service Worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
+
+// Botão imprimir
+document.getElementById("btnPrint").addEventListener("click", function() {
+  const printArea = document.getElementById("print");
+  let html6 = "";
+  for (let i=0; i<6; i++) html6 += printArea.dataset.clone;
+  printArea.innerHTML = html6;
+
+  setTimeout(() => {
+   window.print();
+ }, 100);
+});
+
+// Exportar estudos
+document.getElementById("btnExport").addEventListener("click", function() {
+  if (estudos.length === 0) { alert("Nenhum estudo para exportar."); return; }
+
+  const dataStr = JSON.stringify(estudos, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `estudos_${ano.value || '2026'}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Importar estudos
+document.getElementById("btnImport").addEventListener("click", () => {
+  document.getElementById("importFile").click();
+});
+
+document.getElementById("importFile").addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (Array.isArray(data)) {
+        estudos = data;
+        renderCartao();
+        alert("Estudos importados com sucesso!");
+      } else {
+        alert("Arquivo inválido!");
+      }
+    } catch (err) {
+      alert("Erro ao ler arquivo!");
+    }
+  };
+  reader.readAsText(file);
+});
 </script>
 
 </body>
