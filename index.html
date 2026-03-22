@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Estudos Bíblicos</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="icon-192.png">
+
+<style>
+body { font-family: Arial; margin:0; background:#f5f5f5;}
+.container { padding:15px; }
+
+input, select, button {
+  padding:8px;
+  margin:5px 0;
+  width:100%;
+}
+
+button {
+  background:black;
+  color:white;
+  border:none;
+}
+
+.cartao {
+  width:320px;
+  border:2px solid black;
+  padding:5px;
+  margin:auto;
+  background:white;
+}
+
+.titulo {
+  text-align:center;
+  font-weight:bold;
+  border-bottom:1px solid black;
+}
+
+.linha { display:flex; }
+
+.coluna { width:50%; padding:2px; }
+
+.mes {
+  font-weight:bold;
+  border-bottom:1px solid black;
+}
+
+td {
+  border-bottom:1px solid #ccc;
+  font-size:11px;
+  cursor:pointer;
+}
+
+td:hover {
+  background:#eee;
+}
+
+@media print {
+  body * { visibility:hidden;}
+  .print-area, .print-area * { visibility:visible;}
+  .print-area { position:absolute; top:0; left:0; width:100%;}
+  button { display:none;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h3>Gerar Estudos</h3>
+
+<input id="cidade" placeholder="Cidade">
+<input id="ano" placeholder="Ano (ex: 2026)">
+
+<select id="mesInicial">
+<option>Janeiro</option>
+<option>Fevereiro</option>
+<option>Março</option>
+<option>Abril</option>
+<option>Maio</option>
+<option>Junho</option>
+<option>Julho</option>
+<option>Agosto</option>
+<option>Setembro</option>
+<option>Outubro</option>
+<option>Novembro</option>
+<option>Dezembro</option>
+</select>
+
+<select id="diaSemana">
+<option value="">Dia da semana</option>
+<option value="0">Domingo</option>
+<option value="1">Segunda</option>
+<option value="2">Terça</option>
+<option value="3">Quarta</option>
+<option value="4">Quinta</option>
+<option value="5">Sexta</option>
+<option value="6">Sábado</option>
+</select>
+
+<button onclick="gerarCalendario()">Gerar Calendário</button>
+<button onclick="window.print()">Imprimir</button>
+
+<div class="print-area" id="print"></div>
+
+</div>
+
+<script>
+let estudos = [];
+
+const cidade = document.getElementById("cidade");
+const ano = document.getElementById("ano");
+const diaSemana = document.getElementById("diaSemana");
+const mesInicial = document.getElementById("mesInicial");
+const print = document.getElementById("print");
+
+function gerarCalendario(){
+  estudos = [];
+
+  if(!ano.value || diaSemana.value === ""){
+    alert("Preencha ano e dia da semana");
+    return;
+  }
+
+  let anoNum = parseInt(ano.value);
+
+  for(let mes=0; mes<12; mes++){
+    for(let dia=1; dia<=31; dia++){
+      let data = new Date(anoNum, mes, dia);
+
+      if(data.getMonth() !== mes) continue;
+
+      if(data.getDay() == diaSemana.value){
+        estudos.push({
+          mes: nomeMes(mes),
+          dia: dia,
+          livro: "",
+          capitulo: ""
+        });
+      }
+    }
+  }
+
+  renderCartao();
+}
+
+function nomeMes(m){
+  return ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+          "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][m];
+}
+
+function gerarOrdemMeses(inicio){
+  const meses = [
+    "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+    "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+  ];
+
+  let index = meses.indexOf(inicio);
+  let ordem = [];
+
+  for(let i=0;i<12;i++){
+    ordem.push(meses[(index + i) % 12]);
+  }
+
+  return ordem;
+}
+
+function renderCartao(){
+
+  const ordem = gerarOrdemMeses(mesInicial.value);
+
+  const meses = {};
+  estudos.forEach(e=>{
+    if(!meses[e.mes]) meses[e.mes]=[];
+    meses[e.mes].push(e);
+  });
+
+  let html = `<div class="cartao">
+  <div class="titulo">Estudos - ${cidade.value} ${ano.value}</div>`;
+
+  for(let i=0;i<6;i++){
+    let m1 = ordem[i];
+    let m2 = ordem[i+6];
+
+    html += `<div class="linha">`;
+
+    html += colunaHTML(m1, meses[m1]);
+    html += colunaHTML(m2, meses[m2]);
+
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+
+  print.innerHTML = html;
+}
+
+function colunaHTML(mes, lista){
+  let html = `<div class="coluna">
+    <div class="mes">${mes}</div>
+    <table>`;
+
+  if(lista){
+    lista.forEach((e)=>{
+      let id = estudos.indexOf(e);
+
+      html += `
+        <tr onclick="editar(${id})">
+          <td>${e.dia}</td>
+          <td>${e.livro || ""} ${e.capitulo || ""}</td>
+        </tr>
+      `;
+    });
+  }
+
+  html += `</table></div>`;
+  return html;
+}
+
+function editar(i){
+  let livro = prompt("Livro:", estudos[i].livro);
+  if(livro === null) return;
+
+  let cap = prompt("Capítulo:", estudos[i].capitulo);
+  if(cap === null) return;
+
+  estudos[i].livro = livro;
+  estudos[i].capitulo = cap;
+
+  renderCartao();
+}
+
+// 🔥 SERVICE WORKER
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
