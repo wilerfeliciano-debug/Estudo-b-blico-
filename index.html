@@ -245,7 +245,7 @@ if ("serviceWorker" in navigator) {
 document.getElementById("btnPrint").addEventListener("click", function() {
   const printArea = document.getElementById("print");
   let html6 = "";
-  for (let i=0; i<6; i++) html6 += printArea.dataset.clone;
+  for (let i=0; i<1; i++) html6 += printArea.dataset.clone;
   printArea.innerHTML = html6;
 
   setTimeout(() => {
