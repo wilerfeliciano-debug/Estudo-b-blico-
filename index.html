@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ✅ PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<title>Gerador de Estudos Bíblicos</title>
+
+<style>
+body { font-family: Arial; padding: 10px; }
+
+input, select, button {
+  width: 100%;
+  margin: 5px 0;
+  padding: 10px;
+  font-size: 16px;
+}
+
+button { background: black; color: white; border: none; }
+
+.card {
+  width: 85mm;
+  border: 2px solid black;
+  padding: 5px;
+  margin-top: 10px;
+}
+
+.titulo {
+  text-align: center;
+  font-weight: bold;
+  border-bottom: 1px solid black;
+  margin-bottom: 3px;
+}
+
+.principal { width: 100%; border-collapse: collapse; }
+.principal td { width: 50%; vertical-align: top; }
+.principal td:first-child { border-right: 1px solid black; }
+
+.mes {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  height: 140px;
+}
+
+th {
+  text-align: center;
+  border-bottom: 1px solid black;
+  font-size: 11px;
+}
+
+.mes td {
+  padding: 0;
+  vertical-align: middle;
+}
+
+td {
+  border-bottom: 0.3px solid #aaa;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.vazio td { border-bottom: none; }
+
+.linha-dia {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  align-items: center;
+}
+
+.numero {
+  border-right: 1px solid black;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conteudo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.6);
+}
+
+.modal-box {
+  background: white;
+  padding: 15px;
+  margin: 40% auto;
+  width: 80%;
+}
+
+@media print {
+  body * { visibility: hidden; }
+  .card, .card * { visibility: visible; }
+  .card { position: absolute; top: 0; left: 0; }
+}
+</style>
+</head>
+
+<body>
+
+<h2>Gerar Estudos Bíblicos</h2>
+
+<input id="cidade" placeholder="Digite a cidade">
+<input id="ano" type="number" placeholder="Digite o ano ex: 2026">
+
+<select id="mes">
+<option value="0">Janeiro</option>
+<option value="1">Fevereiro</option>
+<option value="2">Março</option>
+<option value="3">Abril</option>
+<option value="4">Maio</option>
+<option value="5">Junho</option>
+<option value="6">Julho</option>
+<option value="7">Agosto</option>
+<option value="8">Setembro</option>
+<option value="9">Outubro</option>
+<option value="10">Novembro</option>
+<option value="11">Dezembro</option>
+</select>
+
+<select id="diaSemana">
+<option value="0">Domingo</option>
+<option value="1">Segunda</option>
+<option value="2">Terça</option>
+<option value="3">Quarta</option>
+<option value="4">Quinta</option>
+<option value="5">Sexta</option>
+<option value="6">Sábado</option>
+</select>
+
+<select id="semana">
+<option value="1">1ª semana</option>
+<option value="2">2ª semana</option>
+<option value="3">3ª semana</option>
+<option value="4">4ª semana</option>
+<option value="5">5ª semana</option>
+</select>
+
+<button onclick="gerar()">Gerar Calendário</button>
+<button onclick="window.print()">Imprimir</button>
+<button onclick="baixarImagem()">Salvar como imagem</button>
+
+<div id="saida"></div>
+
+<div id="modal" class="modal">
+  <div class="modal-box">
+    <h3>Estudo Bíblico</h3>
+    <input id="livro">
+    <input id="capitulo">
+    <button onclick="salvar()">Salvar</button>
+    <button onclick="fechar()">Cancelar</button>
+  </div>
+</div>
+
+<!-- ✅ html2canvas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+
+let chaveAtual = null;
+
+function primeiraOcorrencia(ano, mes, diaSemana) {
+  let d = new Date(ano, mes, 1);
+  while (d.getDay() != diaSemana) d.setDate(d.getDate()+1);
+  return d;
+}
+
+function gerar() {
+
+  let cidade = document.getElementById("cidade").value.trim();
+  let tituloCidade = cidade ? cidade + " " : "";
+
+  let ano = +document.getElementById("ano").value || new Date().getFullYear();
+  let mesInicial = +document.getElementById("mes").value;
+  let diaSemana = +document.getElementById("diaSemana").value;
+  let semana = +document.getElementById("semana").value;
+
+  let html = `<div class="card">
+  <div class="titulo">Estudos Bíblicos ${tituloCidade}${ano}/${ano+1}</div>
+  <table class="principal"><tr>`;
+
+  let mes = mesInicial;
+  let anoAtual = ano;
+
+  for (let lado = 0; lado < 2; lado++) {
+
+    html += "<td>";
+
+    for (let i = 0; i < 6; i++) {
+
+      if (mes === 0 && !(lado===0 && i===0)) anoAtual++;
+
+      let nomeMes = new Date(anoAtual, mes).toLocaleString('pt-BR',{month:'long'});
+      nomeMes = nomeMes.charAt(0).toUpperCase()+nomeMes.slice(1);
+
+      if (mes === 0) nomeMes = anoAtual + " - Janeiro";
+
+      html += `<table class="mes">
+      <tr><th>${nomeMes}</th></tr>`;
+
+      let inicioBase = primeiraOcorrencia(anoAtual, mes, diaSemana);
+
+      for (let s = 0; s < 6; s++) {
+
+        if (mes === mesInicial && s < (semana - 1)) {
+          html += `<tr class="vazio"><td><div class="linha-dia"><div class="numero"></div><div></div></div></td></tr>`;
+          continue;
+        }
+
+        let d = new Date(inicioBase);
+        d.setDate(inicioBase.getDate() + s*7);
+
+        if (d.getMonth() === mes) {
+
+          let chave = d.toISOString().split("T")[0];
+          let estudos = JSON.parse(localStorage.getItem("estudos")||"{}");
+          let texto = estudos[chave] ? `${estudos[chave].livro} ${estudos[chave].capitulo}` : "";
+
+          html += `<tr>
+<td onclick="clicarDia('${chave}')">
+<div class="linha-dia">
+<div class="numero">${d.getDate()}</div>
+<div class="conteudo">${texto}</div>
+</div>
+</td>
+</tr>`;
+
+        } else {
+          html += `<tr class="vazio"><td><div class="linha-dia"><div class="numero"></div><div></div></div></td></tr>`;
+        }
+      }
+
+      html += "</table>";
+
+      mes++;
+      if (mes > 11) mes = 0;
+    }
+
+    html += "</td>";
+  }
+
+  html += "</tr></table></div>";
+
+  document.getElementById("saida").innerHTML = html;
+}
+
+function baixarImagem() {
+
+  let card = document.querySelector(".card");
+
+  html2canvas(card, { scale: 3 }).then(canvas => {
+    let link = document.createElement("a");
+    link.download = "estudo-biblico.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  });
+}
+
+function clicarDia(chave) {
+  chaveAtual = chave;
+  let estudos = JSON.parse(localStorage.getItem("estudos")||"{}");
+
+  document.getElementById("livro").value = estudos[chave]?.livro || "";
+  document.getElementById("capitulo").value = estudos[chave]?.capitulo || "";
+
+  document.getElementById("modal").style.display = "block";
+}
+
+function fechar() {
+  document.getElementById("modal").style.display = "none";
+}
+
+function salvar() {
+  let estudos = JSON.parse(localStorage.getItem("estudos")||"{}");
+
+  estudos[chaveAtual] = {
+    livro: document.getElementById("livro").value,
+    capitulo: document.getElementById("capitulo").value
+  };
+
+  localStorage.setItem("estudos", JSON.stringify(estudos));
+  gerar();
+  fechar();
+}
+
+</script>
+
+<!-- ✅ SERVICE WORKER -->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
