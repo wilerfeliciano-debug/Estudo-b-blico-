@@ -288,16 +288,16 @@ function clicarDia(chave) {
 function fechar() {
   document.getElementById("modal").style.display = "none";
 }
-
+  
 function baixarImagem() {
-  let card = document.querySelector(".card");
+let card = document.querySelector(".card");
 
-  html2canvas(card, { scale: 3 }).then(canvas => {
-    let link = document.createElement("a");
-    link.download = "estudo-biblico.jpg"; // muda extensão
-    link.href = canvas.toDataURL("image/jpeg", 0.9); // muda formato + qualidade opcional
-    link.click();
-  });
+html2canvas(card, { scale: 3 }).then(canvas => {
+let link = document.createElement("a");
+link.download = "estudo-biblico.png";
+link.href = canvas.toDataURL("image/png");
+link.click();
+});
 }
 
 function limparEstudos() {
