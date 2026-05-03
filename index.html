@@ -294,8 +294,8 @@ function baixarImagem() {
 
   html2canvas(card, { scale: 3 }).then(canvas => {
     let link = document.createElement("a");
-    link.download = "estudo-biblico.png";
-    link.href = canvas.toDataURL("image/png");
+    link.download = "estudo-biblico.jpg"; // muda extensão
+    link.href = canvas.toDataURL("image/jpeg", 0.9); // muda formato + qualidade opcional
     link.click();
   });
 }
