@@ -293,10 +293,16 @@ function fechar() {
 function baixarImagem() {
   let card = document.querySelector(".card");
 
+  // força tamanho real sem interferência do app
+  const largura = card.offsetWidth;
+  const altura = card.offsetHeight;
+
   html2canvas(card, {
-    scale: 5, // 🔥 qualidade alta (pode usar 4 se travar)
+    scale: window.devicePixelRatio * 2, // 🔥 ajusta automaticamente pro dispositivo
     useCORS: true,
-    backgroundColor: "#ffffff"
+    backgroundColor: "#ffffff",
+    width: largura,
+    height: altura
   }).then(canvas => {
 
     let link = document.createElement("a");
@@ -306,6 +312,8 @@ function baixarImagem() {
 
   });
 }
+
+
 
 function limparEstudos() {
   if (confirm("Apagar todos os estudos?")) {
