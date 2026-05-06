@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!DOCTYPE html><html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
-
-<title>Gerador de Estudos Bíblicos</title>
-
-<style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000"><title>Gerador de Estudos Bíblicos</title><style>
 body { font-family: Arial; padding: 10px; }
 
 input, select, button {
@@ -83,7 +76,6 @@ td {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
 }
 
 .modal {
@@ -106,17 +98,8 @@ td {
   .card, .card * { visibility: visible; }
   .card { position: absolute; top: 0; left: 0; }
 }
-</style>
-</head>
-
-<body>
-
-<h2>Gerar Estudos Bíblicos</h2>
-
-<input id="cidade" placeholder="Digite a cidade">
-<input id="ano" type="number" placeholder="Digite o ano ex: 2026">
-
-<select id="mes">
+</style></head><body><h2>Gerar Estudos Bíblicos</h2><input id="cidade" placeholder="Digite a cidade">
+<input id="ano" type="number" placeholder="Digite o ano ex: 2026"><select id="mes">
 <option value="0">Janeiro</option>
 <option value="1">Fevereiro</option>
 <option value="2">Março</option>
@@ -129,9 +112,7 @@ td {
 <option value="9">Outubro</option>
 <option value="10">Novembro</option>
 <option value="11">Dezembro</option>
-</select>
-
-<select id="diaSemana">
+</select><select id="diaSemana">
 <option value="0">Domingo</option>
 <option value="1">Segunda</option>
 <option value="2">Terça</option>
@@ -139,15 +120,15 @@ td {
 <option value="4">Quinta</option>
 <option value="5">Sexta</option>
 <option value="6">Sábado</option>
-</select>
-
-<select id="semana">
+</select><select id="semana">
 <option value="1">1ª semana</option>
 <option value="2">2ª semana</option>
 <option value="3">3ª semana</option>
 <option value="4">4ª semana</option>
 <option value="5">5ª semana</option>
-</select>
+</select><label>Tamanho do texto dos estudos</label>
+<input id="tamanhoTexto" type="range" min="8" max="24" value="13">
+<span id="valorTamanho">13px</span>
 
 <button onclick="gerar()">Gerar Calendário</button>
 <button onclick="window.print()">Imprimir</button>
@@ -157,11 +138,7 @@ td {
 <button onclick="importarEstudos()">Importar estudos</button>
 <button onclick="limparEstudos()">Limpar estudos</button>
 
-<input type="file" id="fileInput" style="display:none">
-
-<div id="saida"></div>
-
-<div id="modal" class="modal">
+<input type="file" id="fileInput" style="display:none"><div id="saida"></div><div id="modal" class="modal">
   <div class="modal-box">
     <h3>Estudo Bíblico</h3>
     <input id="livro">
@@ -169,13 +146,28 @@ td {
     <button onclick="salvar()">Salvar</button>
     <button onclick="fechar()">Cancelar</button>
   </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-<script>
+</div><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><script>
 
 let chaveAtual = null;
+
+// ===== CONTROLE DE TAMANHO =====
+const range = document.getElementById("tamanhoTexto");
+const label = document.getElementById("valorTamanho");
+
+range.addEventListener("input", () => {
+  label.innerText = range.value + "px";
+  localStorage.setItem("tamanhoTexto", range.value);
+  gerar();
+});
+
+// carregar tamanho salvo
+let tamanhoSalvo = localStorage.getItem("tamanhoTexto");
+if (tamanhoSalvo) {
+  range.value = tamanhoSalvo;
+  label.innerText = tamanhoSalvo + "px";
+}
+
+// ==============================
 
 function primeiraOcorrencia(ano, mes, diaSemana) {
   let d = new Date(ano, mes, 1);
@@ -184,6 +176,8 @@ function primeiraOcorrencia(ano, mes, diaSemana) {
 }
 
 function gerar() {
+
+  let tamanhoTexto = document.getElementById("tamanhoTexto").value || 13;
 
   let cidade = document.getElementById("cidade").value.trim();
   let tituloCidade = cidade ? cidade + " " : "";
@@ -238,7 +232,7 @@ function gerar() {
 <td onclick="clicarDia('${chave}')">
 <div class="linha-dia">
 <div class="numero">${d.getDate()}</div>
-<div class="conteudo">${texto}</div>
+<div class="conteudo" style="font-size:${tamanhoTexto}px">${texto}</div>
 </div>
 </td>
 </tr>`;
@@ -289,16 +283,14 @@ function fechar() {
   document.getElementById("modal").style.display = "none";
 }
 
-/* 🔥 AQUI ESTÁ A ÚNICA MUDANÇA */
 function baixarImagem() {
   let card = document.querySelector(".card");
 
-  // força tamanho real sem interferência do app
   const largura = card.offsetWidth;
   const altura = card.offsetHeight;
 
   html2canvas(card, {
-    scale: window.devicePixelRatio * 2, // 🔥 ajusta automaticamente pro dispositivo
+    scale: window.devicePixelRatio * 2,
     useCORS: true,
     backgroundColor: "#ffffff",
     width: largura,
@@ -312,8 +304,6 @@ function baixarImagem() {
 
   });
 }
-
-
 
 function limparEstudos() {
   if (confirm("Apagar todos os estudos?")) {
@@ -357,13 +347,9 @@ document.getElementById("fileInput").addEventListener("change", function(e) {
   reader.readAsText(file);
 });
 
-</script>
-
-<script>
+</script><script>
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
-</script>
-
-</body>
+</script></body>
 </html>
